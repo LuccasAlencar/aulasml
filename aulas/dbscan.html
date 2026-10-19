@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DBSCAN: encontrando regiões de ocorrências</title>
+<meta name="description" content="Aula de DBSCAN com mapa interativo, código, explicações e arquivos para baixar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="../index.html">Machine Learning</a>
+    <nav class="site-nav" aria-label="Principal">
+      <a href="../index.html">Início</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+<div class="lesson-layout">
+
+<aside class="sidebar" aria-label="Nesta aula">
+  <p class="title">Nesta aula</p>
+  <ul>
+    <li><a href="#objetivos">Objetivos</a></li>
+    <li><a href="#ideia">1. A ideia</a></li>
+    <li><a href="#pontos">2. Os três tipos de ponto</a></li>
+    <li><a href="#parametros">3. eps e min_samples</a></li>
+    <li><a href="#dados">4. Os dados</a></li>
+    <li><a href="#mapa">5. Mapa interativo</a></li>
+    <li><a href="#codigo">6. Passo a passo</a></li>
+    <li><a class="sub" href="#importar">Importar as bibliotecas</a></li><li><a class="sub" href="#carregar">Carregar o arquivo</a></li><li><a class="sub" href="#olhar">Olhar os pontos</a></li><li><a class="sub" href="#padronizar">Padronizar os dados</a></li><li><a class="sub" href="#eps">Escolher o eps</a></li><li><a class="sub" href="#aplicar">Aplicar o DBSCAN</a></li><li><a class="sub" href="#visualizar">Ver os grupos</a></li><li><a class="sub" href="#testar">Testar outros eps</a></li><li><a class="sub" href="#interpretar">Interpretar as regiões</a></li><li><a class="sub" href="#comparar">Comparar com o K-Means</a></li>
+    <li><a href="#resultado">7. Lendo o resultado</a></li>
+    <li><a href="#usos">8. Onde usar e limites</a></li>
+    <li><a href="#exercicios">9. Exercícios</a></li>
+    <li><a href="#baixar">Baixar arquivos</a></li>
+  </ul>
+</aside>
+<article class="lesson">
+
+<nav class="breadcrumb" aria-label="Você está em">
+  <a href="../index.html">Início</a><span class="sep">&gt;</span><a href="../index.html">Aulas</a><span class="sep">&gt;</span><span class="current">DBSCAN</span>
+</nav>
+
+<h1>DBSCAN: encontrando regiões de ocorrências</h1>
+<p class="lead">Vamos pegar o registro de ocorrências de uma cidade inventada e deixar o computador descobrir onde elas se concentram, sem dizer quantas regiões existem e deixando de fora os casos isolados.</p>
+<ul class="tags"><li class="tag">PYTHON</li><li class="tag">SCIKIT-LEARN</li><li class="tag">DBSCAN</li><li class="tag">CLUSTERIZAÇÃO</li></ul>
+<div class="btn-row">
+  <a class="btn btn-primary" href="#baixar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Baixar notebook e dados</a>
+  <a class="btn btn-secondary" href="#mapa">Ir para o mapa</a>
+</div>
+
+<hr class="divider">
+
+<h2 id="objetivos">Objetivos</h2>
+<p>Ao final desta aula você será capaz de:</p>
+<ul>
+  <li>explicar com suas palavras o que o DBSCAN faz e no que ele é diferente do K-Means;</li>
+  <li>diferenciar ponto central, ponto de borda e ruído;</li>
+  <li>escolher o <code>eps</code> e o <code>min_samples</code>;</li>
+  <li>aplicar o DBSCAN no Python e comparar o resultado com o do K-Means.</li>
+</ul>
+
+<h2 id="ideia">1. A ideia</h2>
+<p>Na aula passada o K-Means separou clientes em grupos. Ele funciona bem, mas tem dois limites. Primeiro, você precisa dizer quantos grupos quer. Segundo, ele <strong>obriga todo mundo a entrar em algum grupo</strong>, até aquele ponto que não tem nada a ver com os outros. E ele só se dá bem com grupos “redondos”, ao redor de um centro.</p>
+<p>Agora imagine um mapa com as ocorrências de uma cidade. Algumas se juntam em certas regiões. Outras acontecem sozinhas, em qualquer lugar. Se quisermos achar as regiões, os pontos soltos só atrapalham.</p>
+<p>O <strong>DBSCAN</strong> (<em>Density-Based Spatial Clustering of Applications with Noise</em>) resolve isso olhando a <strong>densidade</strong>: um grupo é uma região onde tem muitos pontos próximos uns dos outros. Quem está sozinho fica de fora, marcado como <strong>ruído</strong>, com o rótulo <code>-1</code>.</p>
+<p>Ele usa só dois ajustes:</p>
+<ul>
+  <li><code>eps</code>: o raio da vizinhança, ou seja, até que distância alguém conta como “vizinho”;</li>
+  <li><code>min_samples</code>: quantos vizinhos são necessários para uma região ser considerada densa.</li>
+</ul>
+
+<div class="table-wrap"><table><thead><tr><th class=""></th><th class="">K-Means</th><th class="">DBSCAN</th></tr></thead><tbody><tr><td class="">Número de grupos</td><td class="">Você precisa definir (K)</td><td class="">Descoberto sozinho</td></tr><tr><td class="">Baseado em</td><td class="">Distância até o centro do grupo</td><td class="">Densidade de pontos</td></tr><tr><td class="">Formato dos grupos</td><td class="">Redondo</td><td class="">Qualquer formato</td></tr><tr><td class="">Pontos isolados (outliers)</td><td class="">Entram em algum grupo e puxam o centro</td><td class="">Ficam de fora, como ruído</td></tr><tr><td class="">Densidades diferentes</td><td class="">Tem problemas</td><td class="">Também tem problemas (o eps é um só)</td></tr></tbody></table></div>
+
+<div class="note">
+  <span class="label">Resumindo</span>
+  <p>DBSCAN = um grupo é onde tem gente junta. Quem está sozinho fica de fora.</p>
+</div>
+
+<h2 id="pontos">2. Os três tipos de ponto</h2>
+<p>Para cada ponto, o DBSCAN desenha um círculo de raio <code>eps</code> ao redor dele e conta quantos pontos cabem dentro (contando o próprio ponto). Com isso, todo ponto cai em uma de três categorias:</p>
+<figure class="fig-svg">
+<svg viewBox="0 0 600 230" role="img" aria-labelledby="t-diag" xmlns="http://www.w3.org/2000/svg">
+<title id="t-diag">Três exemplos com um círculo de raio eps: o ponto central tem 5 pontos no raio, o de borda tem só 3 mas está perto de um central, e o de ruído está sozinho.</title>
+<circle cx="100" cy="100" r="55" fill="#E8F5EF" stroke="#168A5B" stroke-width="1.5" stroke-dasharray="5 4"/>
+<circle cx="75" cy="78" r="5" fill="#168A5B"/><circle cx="128" cy="72" r="5" fill="#168A5B"/><circle cx="68" cy="112" r="5" fill="#168A5B"/><circle cx="125" cy="128" r="5" fill="#168A5B"/><circle cx="100" cy="100" r="7" fill="#106B47" stroke="#fff" stroke-width="2"/>
+<circle cx="292" cy="104" r="55" fill="#E8F5EF" stroke="#168A5B" stroke-width="1.2" stroke-dasharray="5 4"/>
+<circle cx="330" cy="100" r="55" fill="none" stroke="#444" stroke-width="1.5" stroke-dasharray="3 4"/>
+<circle cx="262" cy="80" r="5" fill="#168A5B"/><circle cx="255" cy="118" r="5" fill="#168A5B"/><circle cx="282" cy="140" r="5" fill="#168A5B"/><circle cx="348" cy="66" r="5" fill="#168A5B"/><circle cx="292" cy="104" r="6" fill="#106B47" stroke="#fff" stroke-width="2"/>
+<circle cx="330" cy="100" r="7" fill="#fff" stroke="#168A5B" stroke-width="3"/>
+<circle cx="500" cy="100" r="55" fill="none" stroke="#9A9A9A" stroke-width="1.5" stroke-dasharray="3 4"/>
+<circle cx="565" cy="160" r="5" fill="#168A5B"/><circle cx="500" cy="100" r="7" fill="#fff" stroke="#777" stroke-width="3"/>
+<g font-family="Inter, system-ui, sans-serif" text-anchor="middle">
+<text x="100" y="185" font-size="15" font-weight="600" fill="#111">Central</text>
+<text x="100" y="204" font-size="12.5" fill="#444">5 pontos no raio:</text>
+<text x="100" y="220" font-size="12.5" fill="#444">atinge o mínimo (5)</text>
+<text x="300" y="185" font-size="15" font-weight="600" fill="#111">Borda</text>
+<text x="300" y="204" font-size="12.5" fill="#444">só 3 pontos no raio, mas está</text>
+<text x="300" y="220" font-size="12.5" fill="#444">no raio de um ponto central</text>
+<text x="500" y="185" font-size="15" font-weight="600" fill="#111">Ruído</text>
+<text x="500" y="204" font-size="12.5" fill="#444">só ele mesmo no raio e</text>
+<text x="500" y="220" font-size="12.5" fill="#444">nenhum central por perto</text>
+</g>
+</svg>
+<figcaption>Exemplo com <code>min_samples = 5</code>. Os círculos tracejados têm o tamanho do <code>eps</code>.</figcaption>
+</figure>
+<div class="table-wrap"><table><thead><tr><th class="">Tipo</th><th class="">Como reconhecer</th><th class="">O que acontece</th></tr></thead><tbody><tr><td class=""><strong>Central</strong> (core)</td><td class="">Tem <code>min_samples</code> ou mais pontos dentro do raio.</td><td class="">Faz parte do miolo do grupo.</td></tr><tr><td class=""><strong>Borda</strong> (border)</td><td class="">Tem menos vizinhos que o mínimo, mas está no raio de um ponto central.</td><td class="">Entra no grupo, na beirada.</td></tr><tr><td class=""><strong>Ruído</strong> (noise)</td><td class="">Poucos vizinhos e nenhum ponto central por perto.</td><td class="">Fica de fora. Rótulo <code>-1</code>.</td></tr></tbody></table></div>
+<p>O algoritmo, em passos:</p>
+<ol>
+  <li>Defina <code>eps</code> e <code>min_samples</code>.</li>
+  <li>Para cada ponto, conte os vizinhos dentro do raio <code>eps</code>.</li>
+  <li>Quem tem <code>min_samples</code> ou mais vira ponto central.</li>
+  <li>Pontos centrais que estão perto uns dos outros se conectam e formam um grupo.</li>
+  <li>Pontos que não são centrais, mas estão no raio de um central, entram no grupo como borda.</li>
+  <li>O que sobrou é ruído, rótulo <code>-1</code>.</li>
+</ol>
+
+<h2 id="parametros">3. eps e min_samples</h2>
+<p>Pense em uma festa: as pessoas formam rodas de conversa e algumas ficam sozinhas. Para decidir se alguém faz parte de uma roda, você precisa saber o quão perto ela precisa estar (<code>eps</code>) e quantas pessoas formam uma roda (<code>min_samples</code>).</p>
+<div class="table-wrap"><table><thead><tr><th class="">Ajuste</th><th class="">O que define</th><th class="">Se for muito pequeno</th><th class="">Se for muito grande</th></tr></thead><tbody><tr><td class=""><code>eps</code></td><td class="">Raio para considerar alguém vizinho</td><td class="">Quase tudo vira ruído e os grupos se quebram</td><td class="">Os grupos se fundem e tudo vira um só</td></tr><tr><td class=""><code>min_samples</code></td><td class="">Mínimo de vizinhos para ser ponto central</td><td class="">Muitos grupinhos pequenos e ruidosos</td><td class="">Grupos de verdade somem (viram ruído)</td></tr></tbody></table></div>
+<p><strong>Como escolher o eps:</strong> use o gráfico de k-distâncias. Para cada ponto, calcule a distância até o seu k-ésimo vizinho mais próximo (com k = <code>min_samples</code>), coloque tudo em ordem e olhe a curva. O ponto onde ela começa a disparar, o “joelho”, é um bom <code>eps</code>. Você vai fazer esse gráfico no passo a passo.</p>
+<p><strong>Como escolher o min_samples:</strong> uma regra prática é <code>2 × número de colunas</code>. Nossos dados têm 2 colunas de posição (<code>x_km</code> e <code>y_km</code>), então começamos com <code>min_samples = 4</code>.</p>
+<div class="note warn">
+  <span class="label">É só um ponto de partida</span>
+  <p>Teste valores diferentes e confira se o resultado faz sentido. O próximo mapa foi feito para isso.</p>
+</div>
+
+<h2 id="dados">4. Os dados</h2>
+<p>Usamos o arquivo <code>crimes.csv</code>, com 305 ocorrências de uma cidade <strong>inventada</strong>. Os dados foram criados só para esta aula e não representam nenhum lugar real. Cada linha é uma ocorrência. Veja as primeiras:</p>
+<div class="table-wrap"><table><thead><tr><th class="">ocorrencia_id</th><th class="">tipo</th><th class="num">hora</th><th class="num">x_km</th><th class="num">y_km</th></tr></thead><tbody><tr><td class="">1</td><td class="">roubo</td><td class="num">21</td><td class="num">7.43</td><td class="num">4.84</td></tr><tr><td class="">2</td><td class="">roubo</td><td class="num">11</td><td class="num">5.10</td><td class="num">3.59</td></tr><tr><td class="">3</td><td class="">roubo</td><td class="num">11</td><td class="num">2.19</td><td class="num">4.82</td></tr><tr><td class="">4</td><td class="">roubo</td><td class="num">19</td><td class="num">7.54</td><td class="num">5.54</td></tr><tr><td class="">5</td><td class="">outros</td><td class="num">12</td><td class="num">2.84</td><td class="num">4.39</td></tr><tr><td class="">6</td><td class="">furto</td><td class="num">14</td><td class="num">2.48</td><td class="num">4.63</td></tr><tr><td class="">7</td><td class="">vandalismo</td><td class="num">16</td><td class="num">2.80</td><td class="num">5.09</td></tr><tr><td class="">8</td><td class="">furto</td><td class="num">17</td><td class="num">5.33</td><td class="num">1.34</td></tr></tbody></table></div>
+<p>O que significa cada coluna:</p>
+<div class="table-wrap"><table><thead><tr><th class="">Coluna</th><th class="">O que é</th><th class="">Exemplo</th></tr></thead><tbody><tr><td class=" mono-cell">ocorrencia_id</td><td class="">Número da ocorrência (1, 2, 3…).</td><td class=" mono-cell">1</td></tr><tr><td class=" mono-cell">tipo</td><td class="">O que aconteceu: furto, roubo, vandalismo ou outros.</td><td class=" mono-cell">roubo</td></tr><tr><td class=" mono-cell">hora</td><td class="">Hora do dia em que aconteceu (0 a 23).</td><td class=" mono-cell">21</td></tr><tr><td class=" mono-cell">x_km</td><td class="">Posição no mapa, em km, medida da esquerda para a direita.</td><td class=" mono-cell">7.43</td></tr><tr><td class=" mono-cell">y_km</td><td class="">Posição no mapa, em km, medida de baixo para cima.</td><td class=" mono-cell">4.84</td></tr></tbody></table></div>
+<p>Num caso real, a posição viria de latitude e longitude. Aqui usamos km em um mapa de 10 por 7 para ficar mais fácil de enxergar.</p>
+
+<h2 id="mapa">5. Mapa interativo</h2>
+<p>Cada ponto é uma ocorrência. Mexa nos controles e veja o que muda. Passe o mouse (ou toque) em um ponto para ver quem são os vizinhos dele e se ele é central, de borda ou ruído. Os nomes “Centro”, “Terminal” e “Orla do rio” são só do mapa inventado.</p>
+
+<div class="mapa" id="mapa-dbscan" hidden>
+  <div class="mapa-linha">
+    <div class="seg" role="group" aria-label="Algoritmo">
+      <button type="button" id="modo-dbscan" aria-pressed="true">DBSCAN</button>
+      <button type="button" id="modo-kmeans" aria-pressed="false">K-Means</button>
+    </div>
+    <div class="presets">Atalhos:
+      <button type="button" class="btn btn-secondary btn-sm" data-eps="0.05">eps pequeno</button>
+      <button type="button" class="btn btn-secondary btn-sm" data-eps="0.25">eps bom</button>
+      <button type="button" class="btn btn-secondary btn-sm" data-eps="0.8">eps grande</button>
+    </div>
+  </div>
+  <div class="mapa-linha" id="ctl-dbscan">
+    <div class="ctl"><label for="ctl-eps">eps <output id="out-eps" for="ctl-eps">0,25</output></label>
+      <input type="range" id="ctl-eps" min="0.03" max="1" step="0.01" value="0.25"></div>
+    <div class="ctl"><label for="ctl-min">min_samples <output id="out-min" for="ctl-min">4</output></label>
+      <input type="range" id="ctl-min" min="2" max="12" step="1" value="4"></div>
+    <div class="ctl ctl-check"><input type="checkbox" id="ctl-tipos"><label for="ctl-tipos">Mostrar o tipo de cada ponto (borda vira anel)</label></div>
+  </div>
+  <div class="mapa-linha" id="ctl-kmeans" hidden>
+    <div class="ctl"><label for="ctl-k">K (número de grupos) <output id="out-k" for="ctl-k">3</output></label>
+      <input type="range" id="ctl-k" min="2" max="6" step="1" value="3"></div>
+  </div>
+
+  <svg id="mapa-svg" viewBox="0 0 860 612" role="img" aria-label="Mapa com as ocorrências coloridas pelo grupo encontrado"></svg>
+  <p class="mapa-resumo" aria-live="polite"></p>
+  <p class="mapa-dica"></p>
+  <ul class="legenda"></ul>
+  <p class="mapa-info"></p>
+</div>
+<noscript>
+  <figure>
+    <img src="../assets/img/dbscan.png" alt="Mapa com as três regiões encontradas pelo DBSCAN e os pontos isolados em cinza" width="640" height="460">
+    <figcaption>O mapa interativo precisa de JavaScript. Esta imagem mostra o resultado com eps = 0,25 e min_samples = 4.</figcaption>
+  </figure>
+</noscript>
+
+<p>Experimente:</p>
+<ol>
+  <li>Clique em <strong>eps pequeno</strong>. O que acontece com os grupos e com o ruído?</li>
+  <li>Clique em <strong>eps grande</strong>. Quantos grupos sobram?</li>
+  <li>Volte para o <strong>eps bom</strong> e suba o <code>min_samples</code> até 12. O que acontece com as regiões menos densas?</li>
+  <li>Ative “Mostrar o tipo de cada ponto” e passe o mouse em um ponto da beirada de um grupo.</li>
+  <li>Troque para <strong>K-Means</strong> com K = 3. A região do rio é cortada em duas partes, e uma delas (30 ocorrências) acaba no mesmo grupo do Centro. Os pontos isolados também entram nos grupos.</li>
+</ol>
+
+<h2 id="codigo">6. Passo a passo</h2>
+<p>O código abaixo é o mesmo do notebook. Você pode ir copiando célula por célula no Google Colab, ou abrir o notebook direto lá (botão no fim da página).</p>
+
+<h3 id="importar">Importar as bibliotecas</h3>
+<p><code>pandas</code> mexe com tabelas, <code>matplotlib</code> faz os gráficos e o <code>scikit-learn</code> traz o <code>DBSCAN</code>, o <code>KMeans</code> e o <code>NearestNeighbors</code> (usado para achar os vizinhos mais próximos).</p>
+<pre><code><span class="c"># 1. Importar bibliotecas</span>
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN, KMeans
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import StandardScaler
+from google.colab import files</code></pre>
+
+<h3 id="carregar">Carregar o arquivo</h3>
+<p>O <code>files.upload()</code> abre um botão para você escolher o <code>crimes.csv</code> no seu computador. Depois o <code>read_csv</code> lê o arquivo em uma tabela chamada <code>df</code>.</p>
+<pre><code><span class="c"># 2. Enviar o arquivo crimes.csv</span>
+files.upload()
+df = pd.read_csv(&quot;crimes.csv&quot;)
+df.head()</code></pre>
+<div class="note warn">
+  <span class="label">Rodando fora do Colab?</span>
+  <p>Apague as linhas <code>from google.colab import files</code> e <code>files.upload()</code> e deixe o <code>crimes.csv</code> na mesma pasta do notebook.</p>
+</div>
+
+<h3 id="olhar">Olhar os pontos</h3>
+<p>Antes de qualquer modelo, vale ver os dados. Este gráfico mostra todas as ocorrências em cinza, sem grupo nenhum. Dá para perceber algumas regiões mais cheias?</p>
+<pre><code><span class="c"># 3. Olhar as ocorrências no mapa (ainda sem grupos)</span>
+plt.scatter(df[&quot;x_km&quot;], df[&quot;y_km&quot;], s=20, color=&quot;gray&quot;)
+plt.xlabel(&quot;x (km)&quot;)
+plt.ylabel(&quot;y (km)&quot;)
+plt.title(&quot;Ocorrências registradas&quot;)
+plt.show()</code></pre>
+
+<h3 id="padronizar">Padronizar os dados</h3>
+<p>O <code>eps</code> é uma distância. Se as colunas estivessem em escalas muito diferentes (reais de um lado, quantidade do outro, por exemplo), uma delas dominaria a conta de quem é vizinho de quem. O <code>StandardScaler</code> coloca as colunas na mesma escala. Aqui as duas já estão em km, mas padronizar é um hábito que vale manter. Por isso o <code>eps</code> que vamos usar (0,25) está na escala padronizada, não em km.</p>
+<pre><code><span class="c"># 4. Padronizar as coordenadas (o eps é uma distância)</span>
+X = StandardScaler().fit_transform(df[[&quot;x_km&quot;, &quot;y_km&quot;]])</code></pre>
+
+<h3 id="eps">Escolher o eps</h3>
+<p>Usamos o <code>NearestNeighbors</code> para achar, para cada ponto, a distância até o 4º vizinho mais próximo (o 4 vem do <code>min_samples</code>). Ordenamos essas distâncias e desenhamos a curva.</p>
+<pre><code><span class="c"># 5. Escolher o eps: gráfico de k-distâncias</span>
+<span class="c"># 2 colunas -&gt; min_samples = 4, então olhamos o 4º vizinho mais próximo</span>
+vizinhos = NearestNeighbors(n_neighbors=4).fit(X)
+distancias, _ = vizinhos.kneighbors(X)
+k_dist = sorted(distancias[:, -1])
+
+plt.plot(k_dist)
+plt.xlabel(&quot;Pontos ordenados&quot;)
+plt.ylabel(&quot;Distância ao 4º vizinho&quot;)
+plt.title(&quot;Gráfico de k-distâncias&quot;)
+plt.show()</code></pre>
+<figure>
+  <img src="../assets/img/kdist.png" alt="Gráfico de k-distâncias: a curva sobe devagar e dispara perto de 0,25" width="640" height="360" loading="lazy">
+  <figcaption>A maioria dos pontos tem vizinhos bem perto. A curva dispara a partir de uns 0,2 a 0,25: são os pontos isolados. Escolhemos <code>eps = 0,25</code>.</figcaption>
+</figure>
+
+<h3 id="aplicar">Aplicar o DBSCAN</h3>
+<p>Criamos o modelo com os dois ajustes e pedimos para ele agrupar. O <code>fit_predict</code> devolve o grupo de cada ocorrência (0, 1, 2…) ou <code>-1</code> para ruído. Note que não dissemos quantos grupos queremos.</p>
+<pre><code><span class="c"># 6. Aplicar o DBSCAN</span>
+modelo = DBSCAN(eps=0.25, min_samples=4)
+df[&quot;dbscan&quot;] = modelo.fit_predict(X)
+
+<span class="c"># -1 = ruído (não entrou em nenhum grupo)</span>
+print(df[&quot;dbscan&quot;].value_counts().sort_index())</code></pre>
+<p class="output-label">Resultado:</p>
+<div class="table-wrap"><table class="compact"><thead><tr><th class="">dbscan</th><th class="num">ocorrências</th></tr></thead><tbody><tr><td class="">-1 (ruído)</td><td class="num">39</td></tr><tr><td class="">0</td><td class="num">80</td></tr><tr><td class="">1</td><td class="num">87</td></tr><tr><td class="">2</td><td class="num">99</td></tr></tbody></table></div>
+<p>Ele achou três grupos sozinho, e 39 ocorrências ficaram de fora como ruído.</p>
+
+<h3 id="visualizar">Ver os grupos</h3>
+<p>Pintamos cada grupo de uma cor e deixamos o ruído em cinza, com um “x”.</p>
+<pre><code><span class="c"># 7. Visualizar os grupos (ruído em cinza)</span>
+ruido = df[&quot;dbscan&quot;] == -1
+
+plt.scatter(df.loc[~ruido, &quot;x_km&quot;], df.loc[~ruido, &quot;y_km&quot;],
+            c=df.loc[~ruido, &quot;dbscan&quot;], cmap=&quot;viridis&quot;, s=25)
+plt.scatter(df.loc[ruido, &quot;x_km&quot;], df.loc[ruido, &quot;y_km&quot;],
+            c=&quot;lightgray&quot;, marker=&quot;x&quot;, s=25, label=&quot;ruído&quot;)
+plt.xlabel(&quot;x (km)&quot;)
+plt.ylabel(&quot;y (km)&quot;)
+plt.title(&quot;Regiões encontradas pelo DBSCAN&quot;)
+plt.legend()
+plt.show()</code></pre>
+<figure>
+  <img src="../assets/img/dbscan.png" alt="Mapa de pontos com três regiões coloridas e os pontos de ruído em cinza" width="640" height="460" loading="lazy">
+  <figcaption>As três regiões aparecem bem separadas. Repare que a região do rio tem formato alongado, e o DBSCAN seguiu a curva dela.</figcaption>
+</figure>
+
+<h3 id="testar">Testar outros eps</h3>
+<p>O resultado depende muito do <code>eps</code>. Este laço testa quatro valores e conta grupos e ruído:</p>
+<pre><code><span class="c"># 8. Testar outros valores de eps</span>
+for eps in [0.05, 0.1, 0.25, 0.6]:
+    rotulos = DBSCAN(eps=eps, min_samples=4).fit_predict(X)
+    grupos = len(set(rotulos)) - (1 if -1 in rotulos else 0)
+    print(f&quot;eps={eps}: {grupos} grupos, {(rotulos == -1).sum()} pontos de ruído&quot;)</code></pre>
+<p class="output-label">Resultado:</p>
+<div class="table-wrap"><table class="compact"><thead><tr><th class="num">eps</th><th class="num">grupos</th><th class="num">ruído</th></tr></thead><tbody><tr><td class="num">0,05</td><td class="num">14</td><td class="num">200</td></tr><tr><td class="num">0,1</td><td class="num">11</td><td class="num">95</td></tr><tr><td class="num">0,25</td><td class="num">3</td><td class="num">39</td></tr><tr><td class="num">0,6</td><td class="num">1</td><td class="num">1</td></tr></tbody></table></div>
+<p>Com 0,05 o <code>eps</code> é pequeno demais: as regiões se quebram e quase tudo vira ruído. Com 0,6 é grande demais: tudo se junta em um grupo só. Entre os dois está o valor que faz sentido.</p>
+
+<h3 id="interpretar">Interpretar as regiões</h3>
+<p>O DBSCAN só entrega números. Para dar sentido, olhamos o que tem dentro de cada grupo (deixando o ruído de fora): quantas ocorrências, a hora média e o tipo mais comum.</p>
+<pre><code><span class="c"># 9. Interpretar: o que tem em cada região?</span>
+regioes = df[df[&quot;dbscan&quot;] != -1]
+regioes.groupby(&quot;dbscan&quot;).agg(
+    ocorrencias=(&quot;ocorrencia_id&quot;, &quot;count&quot;),
+    hora_media=(&quot;hora&quot;, &quot;mean&quot;),
+    tipo_mais_comum=(&quot;tipo&quot;, lambda t: t.mode()[0])).round(1)</code></pre>
+<p class="output-label">Resultado:</p>
+<div class="table-wrap"><table class="compact"><thead><tr><th class="">dbscan</th><th class="num">ocorrências</th><th class="num">hora_media</th><th class="">tipo_mais_comum</th></tr></thead><tbody><tr><td class="">0</td><td class="num">80</td><td class="num">17,7</td><td class="">roubo</td></tr><tr><td class="">1</td><td class="num">87</td><td class="num">14,0</td><td class="">furto</td></tr><tr><td class="">2</td><td class="num">99</td><td class="num">20,1</td><td class="">vandalismo</td></tr></tbody></table></div>
+
+<h3 id="comparar">Comparar com o K-Means</h3>
+<p>Agora rodamos o K-Means com K = 3 nos mesmos dados e colocamos os dois lado a lado. O <code>crosstab</code> no final mostra, para cada grupo do DBSCAN, onde seus pontos caíram no K-Means.</p>
+<pre><code><span class="c"># 10. Comparar com o K-Means (K = 3)</span>
+df[&quot;kmeans&quot;] = KMeans(n_clusters=3, random_state=42, n_init=10).fit_predict(X)
+
+fig, eixos = plt.subplots(1, 2, figsize=(11, 4))
+eixos[0].scatter(df[&quot;x_km&quot;], df[&quot;y_km&quot;], c=df[&quot;kmeans&quot;], cmap=&quot;viridis&quot;, s=25)
+eixos[0].set_title(&quot;K-Means (K = 3)&quot;)
+eixos[1].scatter(df.loc[~ruido, &quot;x_km&quot;], df.loc[~ruido, &quot;y_km&quot;],
+                 c=df.loc[~ruido, &quot;dbscan&quot;], cmap=&quot;viridis&quot;, s=25)
+eixos[1].scatter(df.loc[ruido, &quot;x_km&quot;], df.loc[ruido, &quot;y_km&quot;],
+                 c=&quot;lightgray&quot;, marker=&quot;x&quot;, s=25)
+eixos[1].set_title(&quot;DBSCAN&quot;)
+plt.show()</code></pre>
+<pre><code><span class="c"># Quem caiu em cada grupo do K-Means?</span>
+pd.crosstab(df[&quot;dbscan&quot;], df[&quot;kmeans&quot;])</code></pre>
+<figure>
+  <img src="../assets/img/comparacao.png" alt="Dois mapas lado a lado: o K-Means corta a região do rio em duas partes, e o DBSCAN a mantém inteira e deixa os pontos isolados em cinza" width="900" height="360" loading="lazy">
+  <figcaption>As cores de um gráfico não combinam com as do outro: o que importa é como os pontos foram separados.</figcaption>
+</figure>
+<p class="output-label">Resultado do crosstab:</p>
+<div class="table-wrap"><table class="compact"><thead><tr><th class="">dbscan \ kmeans</th><th class="num">0</th><th class="num">1</th><th class="num">2</th></tr></thead><tbody><tr><td class="">-1 (ruído)</td><td class="num">10</td><td class="num">18</td><td class="num">11</td></tr><tr><td class="">0</td><td class="num">0</td><td class="num">0</td><td class="num">80</td></tr><tr><td class="">1</td><td class="num">0</td><td class="num">87</td><td class="num">0</td></tr><tr><td class="">2</td><td class="num">69</td><td class="num">30</td><td class="num">0</td></tr></tbody></table></div>
+<p>Repare que o grupo do DBSCAN com a região do rio (99 ocorrências) foi dividido em dois pelo K-Means (69 e 30), e a parte menor ficou junto com o Centro. A linha do ruído mostra que o K-Means distribuiu os pontos isolados entre os grupos.</p>
+
+<h2 id="resultado">7. Lendo o resultado</h2>
+<p>Olhando a posição, a hora e o tipo de cada região, dá para dar um nome para elas e pensar em uma ação:</p>
+<div class="table-wrap"><table><thead><tr><th>Região</th><th class="num">Ocorrências</th><th>Como é</th><th>O que fazer</th></tr></thead><tbody><tr><td><strong>Orla do rio</strong></td><td class='num'>99</td><td>Mais vandalismos, em média às 20h (à noite).</td><td>Iluminar a orla e fazer rondas noturnas.</td></tr><tr><td><strong>Centro</strong></td><td class='num'>87</td><td>Mais furtos, em média às 14h (à tarde).</td><td>Reforçar a ronda a pé no horário comercial e orientar o comércio.</td></tr><tr><td><strong>Terminal</strong></td><td class='num'>80</td><td>Mais roubos, em média às 18h (no fim da tarde).</td><td>Mais policiamento e iluminação perto do terminal, no horário de saída do trabalho.</td></tr></tbody></table></div>
+<p>Os 39 pontos de ruído não são “erro”. São ocorrências isoladas, que não formam região. Em alguns problemas, como fraude bancária, o ruído é justamente a parte mais interessante.</p>
+<div class="note warn">
+  <span class="label">Os números dos grupos podem mudar</span>
+  <p>Em outra versão da biblioteca, a região do Terminal pode sair como grupo 1 em vez de 0. Não decore o número: olhe a posição e a tabela para saber quem é quem.</p>
+</div>
+
+<p>E qual abordagem foi melhor? Depende do que você precisa:</p>
+<div class="table-wrap"><table><thead><tr><th class=""></th><th class="">Vantagem</th><th class="">Desvantagem</th></tr></thead><tbody><tr><td class="">DBSCAN</td><td class="">Acha outliers e formatos irregulares. Não precisa definir K.</td><td class="">Sensível ao <code>eps</code> e ao <code>min_samples</code>. Sofre com densidades muito diferentes.</td></tr><tr><td class="">K-Means</td><td class="">Simples, rápido e fácil de interpretar (centros).</td><td class="">Precisa definir K. Grupos redondos. Outliers puxam os centros.</td></tr></tbody></table></div>
+<p>Neste mapa, o DBSCAN foi melhor: as regiões têm formatos diferentes, e há pontos isolados que não pertencem a nenhuma delas. Se os grupos fossem bolas bem separadas e sem ruído, o K-Means resolveria igualmente bem e de forma mais simples.</p>
+
+<h2 id="usos">8. Onde usar e limites</h2>
+<p>O DBSCAN é útil quando queremos achar padrões de formato irregular e detectar casos fora do padrão:</p>
+<ul>
+  <li><strong>Fraudes bancárias:</strong> transações atípicas aparecem como ruído.</li>
+  <li><strong>Tráfego urbano:</strong> áreas com muitos veículos.</li>
+  <li><strong>Pontos críticos de crimes:</strong> regiões de risco no mapa, como fizemos na aula.</li>
+  <li><strong>Clientes:</strong> grupos com hábitos parecidos, deixando de fora os muito diferentes.</li>
+</ul>
+<p>Mas ele também tem limites. O DBSCAN pode ir mal quando:</p>
+<ul>
+  <li><strong>as densidades são muito diferentes.</strong> Como o <code>eps</code> é um só para todos os dados, um valor que serve para a região cheia não serve para a região mais espalhada (para isso existem variações, como o HDBSCAN);</li>
+  <li><strong>os dados não foram padronizados</strong>, e uma coluna domina a distância;</li>
+  <li><strong>há muitas colunas.</strong> Em muitas dimensões, as distâncias ficam parecidas e a ideia de “perto” perde sentido;</li>
+  <li><strong>o <code>eps</code> ou o <code>min_samples</code> estão mal ajustados</strong>, como você viu no mapa.</li>
+</ul>
+
+<h2 id="exercicios">9. Exercícios</h2>
+<h3>Exercícios de fixação</h3>
+<ol class="exercicios">
+  <li>Marque V ou F:
+    <ul>
+      <li>( ) O DBSCAN precisa que o número de clusters seja definido antes.</li>
+      <li>( ) Pontos de ruído recebem o rótulo <code>-1</code>.</li>
+      <li>( ) Um <code>eps</code> muito grande tende a juntar tudo em um cluster.</li>
+      <li>( ) Um ponto de borda tem pelo menos <code>min_samples</code> vizinhos.</li>
+    </ul></li>
+  <li>Com <code>eps = 2</code> e <code>min_samples = 3</code> (contando o próprio ponto), o ponto A tem 4 pontos a menos de 2 unidades de distância. A é central, de borda ou ruído? Justifique.</li>
+  <li>Complete: <code>modelo = DBSCAN(eps=____, min_samples=____)</code> para dados com 2 colunas, sabendo que o joelho do gráfico de k-distâncias ficou em 0,4.</li>
+  <li>Você rodou o DBSCAN e 70% dos pontos viraram ruído. O que provavelmente está errado e o que você ajustaria?</li>
+  <li>Dê um exemplo de situação em que você usaria DBSCAN em vez de K-Means e explique por quê.</li>
+</ol>
+
+<h3>Atividade prática</h3>
+<p>Em grupos de 3 a 4 pessoas, implementem o DBSCAN e o K-Means no mesmo conjunto de dados. Podem usar o <code>crimes.csv</code> desta aula ou baixar outro conjunto de dados.</p>
+<ol type="a" class="exercicios">
+  <li>Carreguem o conjunto de dados.</li>
+  <li>Apliquem o DBSCAN e ajustem os hiperparâmetros (<code>eps</code> e <code>min_samples</code>).</li>
+  <li>Comparem com os resultados do K-Means e digam qual abordagem funcionou melhor para o conjunto escolhido.</li>
+</ol>
+<p>Respondam também:</p>
+<ol class="exercicios">
+  <li>Expliquem como o DBSCAN define se um ponto pertence a um cluster ou se é um <em>outlier</em>.</li>
+  <li>Qual a diferença entre um Core Point, um Border Point e um Noise Point?</li>
+  <li>Se o <code>eps</code> for muito grande, o que acontece com os clusters gerados?</li>
+  <li>Quais são as principais vantagens e desvantagens do DBSCAN em relação ao K-Means?</li>
+  <li>Em quais tipos de conjuntos de dados o DBSCAN pode falhar?</li>
+</ol>
+<p>Ao terminar, enviem o notebook (<code>.ipynb</code>) pelo AVA.</p>
+
+<h2 id="baixar">Baixar arquivos</h2>
+<div class="download-box">
+  <h3>Notebook da aula</h3>
+  <p><code>dbscan_crimes.ipynb</code> tem todo o código acima, pronto para rodar.</p>
+  <div class="btn-row">
+    <a class="btn btn-primary" href="../downloads/dbscan_crimes.ipynb" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Baixar notebook</a>
+    <a class="btn btn-secondary" href="https://colab.research.google.com/github/LuccasAlencar/aulas-ml/blob/main/downloads/dbscan_crimes.ipynb" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Abrir no Colab</a>
+  </div>
+</div>
+<div class="download-box">
+  <h3>Dados de ocorrências</h3>
+  <p><code>crimes.csv</code> com 305 linhas de uma cidade inventada. Você vai precisar dele quando o notebook pedir o upload.</p>
+  <div class="btn-row">
+    <a class="btn btn-primary" href="../downloads/crimes.csv" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Baixar crimes.csv</a>
+  </div>
+</div>
+
+<nav class="prevnext" aria-label="Outras aulas">
+  <a href="kmeans-rfm.html"><small>Aula anterior</small>K-Means: segmentando clientes</a>
+</nav>
+
+</article>
+</div>
+</main>
+
+<footer class="site-footer">
+</footer>
+<script src="../js/script.js"></script>
+<script src="../js/dbscan-mapa.js"></script>
+</body>
+</html>

@@ -358,3 +358,92 @@ figcaption { font-size: 13px; color: var(--gray-500); margin-top: var(--space-2)
   html { scroll-behavior: auto; }
   * { transition: none !important; }
 }
+
+/* ---------- Mapa interativo (aula de DBSCAN) ---------- */
+
+.mapa {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin: var(--space-5) 0;
+}
+
+.mapa-linha { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-5); align-items: flex-end; margin-bottom: var(--space-4); }
+
+.ctl { display: flex; flex-direction: column; gap: 4px; flex: 1 1 200px; min-width: 0; font-size: 14px; }
+.ctl label { display: flex; justify-content: space-between; color: var(--black); font-weight: 500; }
+.ctl output { font-family: var(--mono); color: var(--green-dark); }
+.ctl input[type="range"] { width: 100%; accent-color: var(--green); margin: 4px 0; }
+.ctl-check { flex-direction: row; align-items: center; gap: var(--space-2); flex: 1 1 100%; }
+.ctl-check input { accent-color: var(--green); width: 16px; height: 16px; }
+
+.seg { display: inline-flex; border: 1px solid var(--gray-300); border-radius: 8px; overflow: hidden; }
+.seg button {
+  font: 500 14px/1 var(--font);
+  padding: 9px 14px;
+  background: var(--white);
+  color: var(--gray-700);
+  border: 0;
+  cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--gray-300); }
+.seg button[aria-pressed="true"] { background: var(--green-light); color: var(--green-dark); }
+
+.btn-sm { padding: 6px 10px; font-size: 14px; }
+.presets { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; font-size: 14px; }
+
+.mapa svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  touch-action: manipulation;
+}
+
+.mapa .grid { stroke: #EFEFEC; stroke-width: 1; }
+.mapa .axis-label { font: 12px var(--font); fill: var(--gray-500); }
+.mapa .place { font: 600 13px var(--font); fill: #6A7B88; paint-order: stroke; stroke: #fff; stroke-width: 4px; }
+.mapa .river { fill: none; stroke: #DCE8F2; stroke-width: 26; stroke-linecap: round; stroke-linejoin: round; }
+.mapa .pt { cursor: pointer; }
+.mapa .pt.nb { stroke: var(--black); stroke-width: 2.5; }
+.mapa .pt.me { stroke: var(--black); stroke-width: 3; }
+
+.mapa-resumo { font-weight: 600; color: var(--black); margin: var(--space-3) 0 2px; }
+.mapa-dica { color: var(--gray-500); font-size: 14px; min-height: 3em; margin-bottom: 0; }
+.mapa-info { background: var(--gray-100); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 14px; min-height: 4.6em; margin: var(--space-3) 0 0; }
+
+.legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; padding: 0; margin: var(--space-3) 0 0; font-size: 14px; }
+.legenda li { display: flex; align-items: center; gap: 6px; margin: 0; }
+.sw { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; }
+.sw.noise { background: var(--white); border: 2px solid #9A9A9A; width: 12px; height: 12px; }
+.sw.border { background: var(--white); border: 2px solid var(--green); }
+
+.fig-svg svg { width: 100%; max-width: 640px; height: auto; border: 1px solid var(--gray-300); border-radius: var(--radius-md); background: var(--white); }
+
+/* exercícios e navegação entre aulas */
+.exercicios { padding-left: 22px; }
+.exercicios li { margin-bottom: var(--space-4); }
+.exercicios ul { margin-top: var(--space-2); }
+
+.prevnext { display: flex; justify-content: space-between; gap: var(--space-4); margin-top: var(--space-8); padding-top: var(--space-5); border-top: 1px solid var(--gray-300); }
+.prevnext a { display: block; padding: 12px 16px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font-weight: 500; }
+.prevnext a:hover { border-color: var(--green); }
+.prevnext small { display: block; color: var(--gray-500); font-weight: 400; font-size: 13px; }
+.prevnext .next { margin-left: auto; text-align: right; }
+
+@media (max-width: 600px) {
+  .prevnext { flex-direction: column; }
+  .prevnext .next { margin-left: 0; text-align: left; }
+}
+
+[hidden] { display: none !important; }
+
+table.compact { width: auto; min-width: 340px; }
+.mapa .axis-label { font-size: 14px; }
+.mapa .place { font-size: 15px; }
+@media (max-width: 600px) {
+  .mapa .axis-label { font-size: 24px; }
+  .mapa .place { font-size: 26px; stroke-width: 6px; }
+}

@@ -1,4 +1,4 @@
-# SJE Tech — Aulas de Aprendizagem de Máquina
+# Machine Learning — Aulas de Aprendizagem de Máquina
 
 Site estático em HTML e CSS puro (sem MkDocs, sem build).
 
@@ -7,10 +7,12 @@ Site estático em HTML e CSS puro (sem MkDocs, sem build).
 ```
 index.html              página inicial
 aulas/kmeans-rfm.html   aula de K-Means
+aulas/dbscan.html       aula de DBSCAN (com mapa interativo)
 css/style.css           design system
 js/script.js            botão "Copiar" e destaque do menu (opcional)
+js/dbscan-mapa.js       mapa interativo da aula de DBSCAN (opcional)
 assets/img/             gráficos da aula
-downloads/              kmeans_rfm.ipynb e compras.csv
+downloads/              notebooks (.ipynb) e dados (.csv) das aulas
 ```
 
 ## Testar no computador
