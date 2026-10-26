@@ -8,9 +8,12 @@ Site estático em HTML e CSS puro (sem MkDocs, sem build).
 index.html              página inicial
 aulas/kmeans-rfm.html   aula de K-Means
 aulas/dbscan.html       aula de DBSCAN (com mapa interativo)
+aulas/hierarchical-clustering.html   aula de Hierarchical clustering (dendrograma interativo)
 css/style.css           design system
+css/componentes.css     estilos extras da aula de Hierarchical clustering
 js/script.js            botão "Copiar" e destaque do menu (opcional)
 js/dbscan-mapa.js       mapa interativo da aula de DBSCAN (opcional)
+js/hierarchical-dendrograma.js   dendrograma interativo (opcional)
 assets/img/             gráficos da aula
 downloads/              notebooks (.ipynb) e dados (.csv) das aulas
 ```

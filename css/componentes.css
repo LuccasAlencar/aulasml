@@ -1,0 +1,44 @@
+/* ==========================================================
+   Componentes extras (aula de Hierarchical clustering)
+   Carregado depois do style.css, só nas páginas que precisam.
+   ========================================================== */
+
+/* menu lateral longo: rola dentro da caixa no desktop */
+@media (min-width: 901px) {
+  .sidebar { max-height: calc(100vh - 48px); overflow-y: auto; }
+}
+
+/* listas dentro de alertas */
+.note ul { margin: 6px 0 0; padding-left: 20px; }
+.note li { margin-bottom: 4px; }
+
+/* alternativas das questões */
+.alternativas { list-style: none; padding-left: 0; margin: var(--space-2) 0 0; }
+.alternativas li { margin-bottom: 4px; }
+
+/* figuras SVG que precisam de toda a largura */
+.fig-svg.wide svg { max-width: 100%; }
+
+/* áreas de aplicação */
+.areas { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin: var(--space-5) 0 var(--space-2); }
+.areas > div { border: 1px solid var(--gray-300); border-radius: var(--radius-md); padding: 14px 16px; }
+.areas strong { display: block; margin-bottom: 2px; }
+.areas span { font-size: 14px; color: var(--gray-500); }
+
+/* resumo da aula */
+.resumo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin: var(--space-5) 0; }
+.resumo-grid > div { border: 1px solid var(--gray-300); border-radius: var(--radius-md); padding: 16px 18px; }
+.resumo-grid h4 { margin-bottom: var(--space-2); }
+.resumo-grid ul { margin: 0; padding-left: 18px; font-size: 15px; }
+.resumo-grid li { margin-bottom: 4px; }
+
+/* dendrograma interativo */
+#hc-scatter { margin-top: var(--space-4); }
+
+@media (max-width: 700px) {
+  .areas { grid-template-columns: repeat(2, 1fr); }
+  .resumo-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+  .areas { grid-template-columns: 1fr; }
+}
